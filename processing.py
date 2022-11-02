@@ -1,4 +1,4 @@
-
+#Computer controlled pad is on the left
 import pandas as pd
 import numpy as np
 class DataFrame():
@@ -75,7 +75,7 @@ class DataFrame():
 
 #1 when does player do good action?
 # when ball is travelling right and then it switches direction...
-#2 computer does good action also when there is change in direction without any point scored
+#2 computer does good action also when there is change in direction (ball going to left now goes to right) without any point scored
 
 #split data into chunks based on chnage in direction
     def classify_actions(self):
@@ -107,11 +107,17 @@ class DataFrame():
             #print(L[i+1]["score"].values[0])
             if df["score"].values[0]!=L[i+1]["score"].values[0]:
                 #if the score of the df is differet than the next one a goal was scored if last direction was right-> comp has scored, otherwise human scored
+               
                 if df["ball moving to right"].values[0]:
                 #comp scored
+                 #the last action from robot was especially good
+                    df["score type"]= [0]*df.shape[0]
+                    df = L[i-1]
                     df["score type"]= [1]*df.shape[0]
                 else:
-                    #human scored
+                    #human scored -> bad action from computer
+                    df["score type"]= [0]*df.shape[0]
+                    df = L[i-1]
                     df["score type"]= [2]*df.shape[0]
             else:
                 df["score type"]= [0]*df.shape[0]      
@@ -122,35 +128,38 @@ class DataFrame():
 #now is time to assemble a final data to train the neuro net
 
 #if label is zero-> check the direction the ball is moving
-#-> right (True) keep everything as it is
-#-> left (False) change my pad and comp pad
+#-> right (True) for now: don't do anything
+#                for later: change my pad and comp pad
+# 
+#-> left (False) it means the robot hit the ball back -> learn from that
 
-#if label is 1-> comp scored, reverse my pad and comp pad
-#if label is 2 -> i scored, leave everything as is
+#if label is 1-> comp scored, keep everything as is
+#if label is 2 -> i scored, don't learn from it
 
 #IDEA for future. Give different scenarios different weights.
     def assemble_train_data(self):
         self.action_list = self.action_list[:len(self.action_list)-1]
         Final = self.action_list[0]
-        for df in self.action_list[1:]:
-            
+        for df in self.action_list[1:]: 
             if df["score type"].values[0]==0:
                 if df["ball moving to right"].values[0]:
-                    Final = pd.concat([Final,df],ignore_index=True)
+                    pass
+                    # col_list = list(df)
+                    # col_list[1], col_list[2] = col_list[2], col_list[1]
+                    # col_list[6], col_list[7] = col_list[7], col_list[6]
+                    # df.columns = col_list
+                    # Final = pd.concat([Final,df],ignore_index=True)
                 else:
-                    col_list = list(df)
-                    col_list[1], col_list[2] = col_list[2], col_list[1]
-                    col_list[6], col_list[7] = col_list[7], col_list[6]
-                    df.columns = col_list
                     Final = pd.concat([Final,df],ignore_index=True)
             elif df["score type"].values[0]==1:
-                col_list = list(df)
-                col_list[1], col_list[2] = col_list[2], col_list[1]
-                col_list[6], col_list[7] = col_list[7], col_list[6]
-                df.columns = col_list
                 Final = pd.concat([Final,df],ignore_index=True)
             elif df["score type"].values[0]==2:
-                Final = pd.concat([Final,df],ignore_index=True)
+                pass
+                # col_list = list(df)
+                # col_list[1], col_list[2] = col_list[2], col_list[1]
+                # col_list[6], col_list[7] = col_list[7], col_list[6]
+                # df.columns = col_list
+                # Final = pd.concat([Final,df],ignore_index=True)
             else:
                 print("Error")
             #print(Final.shape)
